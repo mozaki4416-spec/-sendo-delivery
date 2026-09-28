@@ -1,0 +1,58 @@
+<!doctype html><html lang="ar" dir="rtl"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111111"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json"><title>SENDO</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101010;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+header{position:sticky;top:0;z-index:5;background:#151515;border-bottom:1px solid #333;padding:18px 16px 14px}.logo{font-size:30px;font-weight:900;letter-spacing:3px;color:#d4af37}.tag{font-size:12px;color:#aaa}
+main{max-width:620px;margin:auto;padding:14px}.card{background:#191919;border:1px solid #303030;border-radius:16px;padding:15px;margin-bottom:13px}
+h2{font-size:18px;margin:0 0 13px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#242424;border-radius:12px;padding:11px;text-align:center}.num{font-weight:800;font-size:20px;color:#d4af37}.lbl{font-size:11px;color:#aaa}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}label{font-size:12px;color:#aaa;display:block;margin:9px 0 5px}
+input,select,textarea{width:100%;background:#242424;border:1px solid #444;border-radius:10px;color:#fff;padding:12px;font-size:15px}textarea{min-height:75px}
+button{border:0;border-radius:11px;padding:13px;font-size:15px;font-weight:700}.gold{width:100%;background:#d4af37;color:#111;margin-top:13px}.dark{width:100%;background:#292929;color:#fff;margin-top:8px}
+.order{background:#212121;border:1px solid #383838;border-radius:13px;padding:12px;margin-top:9px}.orderid{color:#d4af37;font-weight:800}.small{font-size:12px;color:#aaa;line-height:1.8}.money{margin-top:7px;font-size:12px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.done{background:#24452f;color:#fff}.del{background:#4a2222;color:#fff}
+#toast{position:fixed;bottom:18px;left:15px;right:15px;background:#222;border:1px solid #444;border-radius:12px;padding:12px;text-align:center;display:none;z-index:10}
+@media(max-width:430px){.grid{grid-template-columns:1fr}}
+</style></head><body>
+<header><div class="logo">SENDO</div><div class="tag">Delivery Management</div></header>
+<main>
+<div class="card"><h2>📊 لوحة اليوم</h2><div class="stats">
+<div class="stat"><div class="num" id="c">0</div><div class="lbl">كل الطلبات</div></div>
+<div class="stat"><div class="num" id="d">0</div><div class="lbl">تم التسليم</div></div>
+<div class="stat"><div class="num" id="p">0</div><div class="lbl">حصة SENDO</div></div>
+</div></div>
+
+<div class="card"><h2>➕ طلب جديد</h2>
+<div class="grid"><div><label>اسم العميل</label><input id="name"></div><div><label>رقم العميل</label><input id="phone" inputmode="tel"></div></div>
+<div class="grid"><div><label>مكان الاستلام</label><input id="pickup"></div><div><label>مكان التوصيل</label><input id="drop"></div></div>
+<label>تفاصيل الطلب</label><textarea id="details"></textarea>
+<div class="grid"><div><label>قيمة الطلب</label><input id="value" type="number" inputmode="decimal"></div><div><label>رسوم التوصيل</label><input id="fee" type="number" inputmode="decimal"></div></div>
+<div class="grid"><div><label>المندوب</label><input id="courier"></div><div><label>حصة المندوب</label><input id="share" type="number" inputmode="decimal"></div></div>
+<div class="grid"><div><label>الدفع</label><select id="pay"><option>كاش</option><option>Vodafone Cash</option><option>InstaPay</option></select></div><div><label>الحالة</label><select id="status"><option>جديد</option><option>تم التعيين</option><option>جاري التوصيل</option><option>تم التسليم</option><option>ملغي</option></select></div></div>
+<button class="gold" onclick="add()">حفظ الطلب</button><button class="dark" onclick="resetForm()">مسح</button></div>
+
+<div class="card"><h2>📦 الطلبات</h2><div id="list"></div></div>
+</main><div id="toast"></div>
+<script>
+const K="sendo_v1";let data=JSON.parse(localStorage.getItem(K)||"[]");
+const $=id=>document.getElementById(id);
+function toast(t){$("toast").textContent=t;$("toast").style.display="block";setTimeout(()=>$("toast").style.display="none",1500)}
+function add(){
+ if(!$("name").value.trim()||!$("phone").value.trim()||!$("drop").value.trim()){toast("اكتب اسم العميل ورقمه والعنوان");return}
+ let fee=+$("fee").value||0,share=+$("share").value||0;
+ data.unshift({id:Date.now(),name:$("name").value,phone:$("phone").value,pickup:$("pickup").value,drop:$("drop").value,details:$("details").value,value:+$("value").value||0,fee, courier:$("courier").value,share,pay:$("pay").value,status:$("status").value,profit:fee-share});
+ localStorage.setItem(K,JSON.stringify(data));resetForm();render();toast("تم حفظ الطلب ✅");
+}
+function resetForm(){["name","phone","pickup","drop","details","value","fee","courier","share"].forEach(x=>$(x).value="");$("pay").value="كاش";$("status").value="جديد"}
+function status(id,s){let o=data.find(x=>x.id===id);if(o){o.status=s;localStorage.setItem(K,JSON.stringify(data));render()}}
+function removeOrder(id){if(confirm("تأكيد حذف الطلب؟")){data=data.filter(x=>x.id!==id);localStorage.setItem(K,JSON.stringify(data));render()}}
+function render(){
+ $("c").textContent=data.length;$("d").textContent=data.filter(x=>x.status==="تم التسليم").length;
+ $("p").textContent=data.reduce((a,x)=>a+(x.profit||0),0)+" ج";
+ $("list").innerHTML=data.length?data.map(o=>`<div class="order"><div class="orderid">#${String(o.id).slice(-5)} — ${o.name}</div>
+<div class="small">📞 ${o.phone}<br>📍 ${o.pickup||"—"} → ${o.drop}<br>🛍️ ${o.details||"—"}<br>🏍️ ${o.courier||"—"}<br>💳 ${o.pay} | ${o.status}</div>
+<div class="money">الطلب ${o.value}ج | التوصيل ${o.fee}ج | المندوب ${o.share}ج | <b> SENDO ${o.profit}ج</b></div>
+<div class="actions"><button class="done" onclick="status(${o.id},'تم التسليم')">تم التسليم</button><button class="del" onclick="removeOrder(${o.id})">حذف</button></div></div>`).join(""):"<div class='small'>لسه مفيش طلبات.</div>";
+}
+if("serviceWorker"in navigator) navigator.serviceWorker.register("sw.js");render();
+</script></body></html>
